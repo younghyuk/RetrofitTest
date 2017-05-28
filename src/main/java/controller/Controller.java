@@ -11,9 +11,14 @@ import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 import webservice.GerritService;
 
+import javax.net.ssl.*;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 import java.util.List;
 
 /**
@@ -39,6 +44,9 @@ public class Controller implements Callback<List<Change>> {
     }
 
     private OkHttpClient createOkHttpClient() {
+
+        // Proxy
+
         int proxyPort = 8080;
         String proxyHost = "127.0.0.1";
         final String username = "username";
@@ -56,10 +64,54 @@ public class Controller implements Callback<List<Change>> {
 
         Proxy proxyTest = new Proxy(Proxy.Type.HTTP, new InetSocketAddress(proxyHost, proxyPort));
 
-        return new OkHttpClient.Builder()
+        // SSL. 모든 인증서 통과하는 셋팅. 다시 말하면 안전하지 않음.
+        final TrustManager[] trustAllCerts = new TrustManager[]{
+                new X509TrustManager() {
+
+                    @Override
+                    public void checkClientTrusted(X509Certificate[] x509Certificates, String s) throws CertificateException {
+                        // Do Nothing
+                    }
+
+                    @Override
+                    public void checkServerTrusted(X509Certificate[] x509Certificates, String s) throws CertificateException {
+                        // Do Nothing
+                    }
+
+                    @Override
+                    public X509Certificate[] getAcceptedIssuers() {
+                        return new X509Certificate[]{};
+                    }
+                }
+        };
+
+        SSLSocketFactory sslSocketFactory = null;
+        try {
+            // Install the all-trusting trust manager
+            final SSLContext sslContext = SSLContext.getInstance("SSL");
+            sslContext.init(null, trustAllCerts, new java.security.SecureRandom());
+            // Create an ssl socket factory with our all-trusting manager
+            sslSocketFactory = sslContext.getSocketFactory();
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        } catch (KeyManagementException e) {
+            e.printStackTrace();
+        }
+        OkHttpClient.Builder builder = new OkHttpClient.Builder()
                 .proxy(proxyTest)
-                .proxyAuthenticator(proxyAuthenticator)
-                .build();
+                .proxyAuthenticator(proxyAuthenticator);
+
+        if (sslSocketFactory != null) {
+            builder.sslSocketFactory(sslSocketFactory, (X509TrustManager)trustAllCerts[0]);
+            builder.hostnameVerifier(new HostnameVerifier() {
+                @Override
+                public boolean verify(String s, SSLSession sslSession) {
+                    return true;
+                }
+            });
+        }
+
+        return builder.build();
     }
 
     @Override
