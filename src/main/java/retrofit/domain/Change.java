@@ -1,4 +1,4 @@
-package domain;
+package retrofit.domain;
 
 import lombok.Data;
 

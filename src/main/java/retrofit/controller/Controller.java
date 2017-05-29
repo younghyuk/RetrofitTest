@@ -1,15 +1,15 @@
-package controller;
+package retrofit.controller;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import domain.Change;
+import retrofit.domain.Change;
 import okhttp3.*;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
-import webservice.GerritService;
+import retrofit.webservice.GerritService;
 
 import javax.net.ssl.*;
 import java.io.IOException;

@@ -1,4 +1,4 @@
-import controller.Controller;
+import retrofit.controller.Controller;
 
 /**
  * 레트로핏 테스트 앱
